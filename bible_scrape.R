@@ -1,7 +1,29 @@
-require(tidyverse, xml2, rvest)
-library(tidyverse)
-library(xml2)
-library(rvest)
+require(tidyverse)
+require(xml2)
+require(rvest)
+require(RSelenium)
+
+start_image <- function() {
+  
+  # Consider if we need to start the docker-machine with shell("docker-machine restart default")
+  # May also need to read the IP if it gets restarted, though if it is just the one machine should not need to worry
+  
+  if(!exists("remDr")) {
+    print("Starting new container...")
+    shell("docker rm jubal")
+    shell("docker run -d --name jubal -p 4444:4444 --shm-size=2g selenium/standalone-chrome ")
+    Sys.sleep(2)
+    remDr <<- remoteDriver(remoteServerAddr = "192.168.99.100", port = 4444L, browserName = "chrome")
+    Sys.sleep(1)
+    remDr$open()
+  } else {
+    print("Killing old container...")
+    rm(remDr, pos = ".GlobalEnv")
+    shell("docker kill jubal")
+    shell("docker rm jubal")
+    start_image()
+  }
+}
 
 book <- read_html("https://bible.usccb.org/bible") %>% 
   html_nodes("#block-usccb-readings-content .content a") %>% 
@@ -23,7 +45,12 @@ scrape_ch_links <- function(book_scr, link_scr) {
   
   rd_html <- read_html(newurl)
   
-  intro <- rd_html %>% 
+  remDr$navigate(newurl)
+  Sys.sleep(3)
+  print("Done")
+  
+  intro <- remDr$getPageSource()[[1]] %>% 
+    read_html() %>% 
     html_nodes("#scribeI") %>% 
     toString()
   
@@ -43,6 +70,7 @@ scrape_ch_links <- function(book_scr, link_scr) {
   
 }
 
+start_image()
 ch_tbl <- map2_dfr(mn_tbl$book, mn_tbl$link, scrape_ch_links) %>% 
   unnest(booklist)
 
@@ -51,7 +79,7 @@ full_ch_tbl <- mn_tbl %>%
   filter(book != "Preface")
 
 saveRDS(full_ch_tbl, "full_ch_tbl.rds")
-# full_ch_tbl <- readRDS("full_ch_tbl.rds")
+# full_ch_tbl2 <- readRDS("full_ch_tbl.rds")
 
 scrape_ch_html <- function(chapter_scr, link_scr) {
   
@@ -59,9 +87,12 @@ scrape_ch_html <- function(chapter_scr, link_scr) {
   
   print(chapter_scr)
   
-  rd_html <- read_html(newurl)
+  remDr$navigate(newurl)
+  Sys.sleep(3)
+  print("Done")
   
-  html_body <- rd_html %>% 
+  html_body <- remDr$getPageSource()[[1]] %>% 
+    read_html() %>% 
     html_nodes("#scribeI") %>% 
     toString()
   
@@ -90,4 +121,4 @@ full_bible <- full_ch_tbl %>%
   tibble(content = oo2)
 
 saveRDS(full_bible, "full_bible.rds")
-# full_bible <- readRDS("full_bible.rds")
+full_bible <- readRDS("full_bible.rds")
