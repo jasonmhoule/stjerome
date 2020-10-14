@@ -79,11 +79,34 @@ build_ch_tbl <- function(bk, ch) {
   
 }
 
-bk <- 73
-ch <- 5
-build_ch_tbl(bk, ch) %>% View()
+# Pull intro + all narrative into one long thread, to break out by sections
+
+assemble_rough_book <- function(bk) {
+  
+  chs <- nrow(full_bible[bk,]$content[[1]])
+  
+  buch <- map_dfr(0:chs, build_ch_tbl, bk = bk)
+  
+  buch %>% 
+    filter(!grepl("-",ids)) %>% 
+    filter(!grepl("fn|en",verse_classes)) %>% 
+    filter(trimws(verse_text) != "")
+  
+}
+
+bk <- 69
+book <- assemble_rough_book(bk)
+View(book)
+
+# Create table/hierarchy
+# Roll table/hierarchy back into rough book
+# Collapse verses (incl their link and annotation refs)
 
 # Still need to handle annotations and links
+
+book <- full_bible[bk,]
+
+ch_content <- book$content[[1]]$ch_content[[ch]]
 
 annotations <- ch_content %>% 
   read_html() %>% 
@@ -93,7 +116,5 @@ annotations <- ch_content %>%
 links <- ch_content %>% 
   read_html() %>% 
   html_nodes(".en")
-
-# Pull intro + all narrative into one long thread, to break out by sections
 
 # Stitch back together the other references
