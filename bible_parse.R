@@ -20,7 +20,7 @@ build_ch_tbl <- function(bk, ch) {
   
   book <- full_bible[bk,]
   
-  if(bk == 0) {
+  if(ch == 0) {
     
     ch_content <- book$intro[[1]]
     
