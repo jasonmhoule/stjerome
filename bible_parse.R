@@ -20,8 +20,16 @@ build_ch_tbl <- function(bk, ch) {
   
   book <- full_bible[bk,]
   
-  ch_content <- book$content[[1]]$ch_content[[ch]]
-  
+  if(bk == 0) {
+    
+    ch_content <- book$intro[[1]]
+    
+  } else {
+    
+    ch_content <- book$content[[1]]$ch_content[[ch]]
+    
+  }
+
   verses <- ch_content %>% 
     read_html() %>% 
     html_nodes(".verse, .wv, .nv, .bksect, .chsect, table")
@@ -87,9 +95,5 @@ links <- ch_content %>%
   html_nodes(".en")
 
 # Pull intro + all narrative into one long thread, to break out by sections
-
-full_bible[1,]$intro[[1]] %>% 
-  read_html() %>% 
-  html_nodes(".bksect")
 
 # Stitch back together the other references
