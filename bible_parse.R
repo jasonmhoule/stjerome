@@ -68,6 +68,10 @@ build_ch_tbl <- function(bk, ch) {
     map(html_attr, "id") %>% 
     as.character()
   
+  verse_html <- verses %>% 
+    map(as.character) %>% 
+    unlist()
+
   verse_node_txt <- verses
   
   for (i in 1:length(verse_node_txt)) {
@@ -79,7 +83,7 @@ build_ch_tbl <- function(bk, ch) {
     map(html_text) %>% 
     as.character()
   
-  tibble(bk = bk, ch = ch, verse_nums, verse_text, verse_links, verse_annotations, ids, verse_classes, verse_b)
+  tibble(bk = bk, ch = ch, verse_nums, verse_html, verse_text, verse_links, verse_annotations, ids, verse_classes, verse_b)
   
 }
 
