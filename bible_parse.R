@@ -102,4 +102,27 @@ assemble_rough_book <- function(bk) {
   
 }
 
+links_to_tw <- function(book) {
+  
+  book <- book %>% 
+    mutate(verse_html_tw = gsub('<a class=\"fnref\" href=\"(.*?)\".*?</sup></a>',"<sup>[[*|\\1]]</sup>",verse_html))
+  
+  verse_node_txt <- book$verse_html_tw %>% 
+    paste(collapse = "") %>% 
+    read_html() %>% 
+    html_nodes(".verse, .wv, .nv, .bksect, .chsect, table")
+  
+  for (i in 1:length(verse_node_txt)) {
+    xml_remove(xml_node(verse_node_txt[[i]], "a"))
+    xml_remove(xml_node(verse_node_txt[[i]], ".bcv"))
+  }
+  
+  verse_text <- verse_node_txt %>% 
+    map(html_text) %>% 
+    as.character()
+  
+  book$verse_text_tw <- verse_text
+  
+  return(book)
+}
 
