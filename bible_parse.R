@@ -34,6 +34,10 @@ build_ch_tbl <- function(bk, ch) {
     read_html() %>% 
     html_nodes(".verse, .wv, .nv, .bksect, .chsect, table")
   
+  if(length(verses) == 0) {
+    return(NULL)
+  }
+  
   verse_classes <- verses %>% 
     map(html_attr, "class")
   
@@ -117,4 +121,3 @@ links <- ch_content %>%
   read_html() %>% 
   html_nodes(".en")
 
-# Stitch back together the other references
