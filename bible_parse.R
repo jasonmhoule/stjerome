@@ -102,26 +102,4 @@ assemble_rough_book <- function(bk) {
   
 }
 
-bk <- 69
-book <- assemble_rough_book(bk)
-View(book)
-
-# Create table/hierarchy
-# Roll table/hierarchy back into rough book
-# Collapse verses (incl their link and annotation refs)
-
-# Still need to handle annotations and links
-
-book <- full_bible[bk,]
-
-ch_content <- book$content[[1]]$ch_content[[ch]]
-
-annotations <- ch_content %>% 
-  read_html() %>% 
-  html_nodes("td, .fn, .fncon") %>% 
-  html_text()
-
-links <- ch_content %>% 
-  read_html() %>% 
-  html_nodes(".en")
 
