@@ -29,7 +29,8 @@ build_ch_tbl <- function(bk, ch) {
     ch_content <- book$content[[1]]$ch_content[[ch]]
     
   }
-
+  
+  # Parse verse data
   verses <- ch_content %>% 
     read_html() %>% 
     html_nodes(".verse, .wv, .nv, .bksect, .chsect, table")
@@ -83,29 +84,71 @@ build_ch_tbl <- function(bk, ch) {
     map(html_text) %>% 
     as.character()
   
-  tibble(bk = bk, ch = ch, verse_nums, verse_html, verse_text, verse_links, verse_annotations, ids, verse_classes, verse_b)
+  verses <- tibble(bk = bk, ch = ch, verse_nums, verse_html, verse_text, verse_links,
+                   verse_annotations, ids, verse_classes, verse_b)
+  
+  # Parse annotation data
+  
+  annot_raw <- ch_content %>% 
+    read_html() %>% 
+    html_nodes("td, .fn, .fncon")
+  
+  annotations_text <- annot_raw %>% 
+    html_text()
+  
+  annotations_html <- annot_raw %>% 
+    as.character()
+  
+  annotations_id <- annot_raw %>% 
+    map(html_attr,"id") %>% 
+    as.character()
+  
+  annotations <- tibble(chapter = ch,
+                        annotations_text = annotations_text,
+                        annotations_id = annotations_id,
+                        annotations_html = annotations_html)
+  
+  # Parse link data
+  
+  links <- ch_content %>% 
+    read_html() %>% 
+    html_nodes(".en")
+  
+  links_html <- links %>%
+    as.character()
+  
+  links_id <- links %>% 
+    map(html_attr,"id") %>% 
+    as.character()
+  
+  links <- tibble(chapter = ch, links_id = links_id, links_html = links_html)
+  
+  list(verses = verses, annotations = annotations, links = links)
   
 }
-
-# Pull intro + all narrative into one long thread, to break out by sections
 
 assemble_rough_book <- function(bk) {
   
   chs <- nrow(full_bible[bk,]$content[[1]])
   
-  buch <- map_dfr(0:chs, build_ch_tbl, bk = bk)
+  buch <- map(0:chs, build_ch_tbl, bk = bk)
   
-  buch %>% 
+  verses <- buch %>% map_dfr(`$`,"verses") %>% 
     filter(!grepl("-",ids)) %>% 
     filter(!grepl("fn|en",verse_classes)) %>% 
     filter(trimws(verse_text) != "")
+  annotations <- buch %>% map_dfr(`$`,"annotations")
+  links <- buch %>% map_dfr(`$`,"links")
+  
+  list(verses = verses, annotations = annotations, links = links)
   
 }
 
 links_to_tw <- function(book) {
   
   book <- book %>% 
-    mutate(verse_html_tw = gsub('<a class=\"fnref\" href=\"(.*?)\".*?</sup></a>',"<sup>[[*|\\1]]</sup>",verse_html))
+    mutate(verse_html_tw = gsub('<a class=\".nref\" href=\"(.*?)\".*?</sup></a>',"\\1",verse_html))
+    # mutate(verse_html_tw = gsub('<a class=\"enref\" href=\"(.*?)\".*?</sup></a>',"\\1",verse_html_tw))
   
   verse_node_txt <- book$verse_html_tw %>% 
     paste(collapse = "") %>% 
